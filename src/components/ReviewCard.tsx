@@ -8,7 +8,7 @@ interface ReviewCardProps {
   rating: number;
   date: string;
   text: string;
-  groupName: string;
+  groupName?: string;
 }
 
 export default function ReviewCard({
@@ -44,7 +44,7 @@ export default function ReviewCard({
           <div className="flex items-center justify-between mb-2">
             <div>
               <h4 className="font-semibold text-sm text-foreground">{userName}</h4>
-              <p className="text-xs text-muted-foreground">Отзыв на {groupName}</p>
+              {groupName && <p className="text-xs text-muted-foreground">Отзыв на {groupName}</p>}
             </div>
             <span className="text-xs text-muted-foreground">{date}</span>
           </div>

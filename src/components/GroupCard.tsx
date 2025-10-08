@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 
 interface GroupCardProps {
@@ -27,6 +28,8 @@ export default function GroupCard({
   avatar,
   onWriteReview
 }: GroupCardProps) {
+  const navigate = useNavigate();
+
   const renderStars = () => {
     return Array.from({ length: 5 }, (_, i) => (
       <Icon
@@ -82,7 +85,7 @@ export default function GroupCard({
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{description}</p>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => navigate(`/group/${id}`)}>
               <Icon name="Eye" size={16} className="mr-2" />
               Отзывы
             </Button>
