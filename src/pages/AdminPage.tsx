@@ -62,7 +62,11 @@ export default function AdminPage() {
       const response = await fetch('https://functions.poehali.dev/c2549759-4ecf-4f2e-ad07-63ae790e3b2b');
       if (!response.ok) throw new Error('Failed to fetch');
       const data = await response.json();
-      setGroups(data || []);
+      setGroups((data || []).map((g: any) => ({
+        ...g,
+        rating: parseFloat(g.rating) || 0,
+        members: typeof g.members === 'string' ? g.members : g.members.toString()
+      })));
     } catch (error) {
       console.error('Error fetching groups:', error);
     } finally {
@@ -151,7 +155,7 @@ export default function AdminPage() {
                 <div className="space-y-2 mb-4 text-sm">
                   <div className="flex items-center gap-2">
                     <Icon name="Users" size={14} className="text-muted-foreground" />
-                    <span className="text-muted-foreground">{group.members.toLocaleString()} подписчиков</span>
+                    <span className="text-muted-foreground">{group.members} подписчиков</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Icon name="Star" size={14} className="text-muted-foreground" />
