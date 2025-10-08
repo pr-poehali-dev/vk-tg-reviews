@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GroupCard from '@/components/GroupCard';
 import ReviewCard from '@/components/ReviewCard';
+import Header from '@/components/Header';
 import Icon from '@/components/ui/icon';
 
 const API_GROUPS = 'https://functions.poehali.dev/c2549759-4ecf-4f2e-ad07-63ae790e3b2b';
@@ -170,16 +171,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <Header />
+      <header className="border-b bg-background">
         <div className="container flex h-16 items-center justify-between px-4 max-w-7xl mx-auto">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground">
-              <Icon name="Star" size={20} className="fill-current" />
-            </div>
-            <h1 className="text-xl font-bold text-foreground">ReviewHub</h1>
-          </div>
-          
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="flex items-center gap-1">
             <Button
               variant={activeTab === 'home' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('home')}

@@ -24,7 +24,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
@@ -177,41 +177,75 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         elif method == 'POST':
             body = json.loads(event.get('body', '{}'))
             
-            name = body.get('name', '')
-            platform = body.get('platform', '')
-            members = body.get('members', '')
-            description = body.get('description', '')
-            link = body.get('link', '')
-            avatar = body.get('avatar', '')
-            
-            if not name or not platform:
+            if body.get('groupId'):
+                group_id = body.get('groupId')
+                name = body.get('name')
+                platform = body.get('platform')
+                avatar = body.get('avatar')
+                members = body.get('members')
+                description = body.get('description', '')
+                link = body.get('link', '')
+                vk_group_id = body.get('vk_group_id', '')
+                telegram_channel_id = body.get('telegram_channel_id', '')
+                
+                cur.execute(
+                    '''UPDATE groups 
+                       SET name = %s, platform = %s, avatar = %s, members = %s, 
+                           description = %s, link = %s, vk_group_id = %s, 
+                           telegram_channel_id = %s, updated_at = CURRENT_TIMESTAMP
+                       WHERE id = %s''',
+                    (name, platform, avatar, members, description, link,
+                     vk_group_id if vk_group_id else None,
+                     telegram_channel_id if telegram_channel_id else None,
+                     group_id)
+                )
+                conn.commit()
+                
                 return {
-                    'statusCode': 400,
+                    'statusCode': 200,
                     'headers': {
                         'Content-Type': 'application/json',
                         'Access-Control-Allow-Origin': '*'
                     },
-                    'body': json.dumps({'error': 'Name and platform are required'}),
+                    'body': json.dumps({'success': True, 'message': 'Group updated successfully'}),
                     'isBase64Encoded': False
                 }
-            
-            cur.execute(
-                '''INSERT INTO groups (name, platform, members, description, link, avatar) 
-                   VALUES (%s, %s, %s, %s, %s, %s) RETURNING id''',
-                (name, platform, members, description, link, avatar)
-            )
-            group_id = cur.fetchone()['id']
-            conn.commit()
-            
-            return {
-                'statusCode': 201,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'id': group_id, 'message': 'Group created successfully'}),
-                'isBase64Encoded': False
-            }
+            else:
+                name = body.get('name', '')
+                platform = body.get('platform', '')
+                members = body.get('members', '')
+                description = body.get('description', '')
+                link = body.get('link', '')
+                avatar = body.get('avatar', '')
+                
+                if not name or not platform:
+                    return {
+                        'statusCode': 400,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({'error': 'Name and platform are required'}),
+                        'isBase64Encoded': False
+                    }
+                
+                cur.execute(
+                    '''INSERT INTO groups (name, platform, members, description, link, avatar) 
+                       VALUES (%s, %s, %s, %s, %s, %s) RETURNING id''',
+                    (name, platform, members, description, link, avatar)
+                )
+                group_id = cur.fetchone()['id']
+                conn.commit()
+                
+                return {
+                    'statusCode': 201,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'id': group_id, 'message': 'Group created successfully'}),
+                    'isBase64Encoded': False
+                }
         
         return {
             'statusCode': 405,
