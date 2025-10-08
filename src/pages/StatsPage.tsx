@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Icon from '@/components/ui/icon';
 
-const API_STATS = 'https://functions.poehali.dev/c2549759-4ecf-4f2e-ad07-63ae790e3b2b/stats';
+const API_STATS = 'https://functions.poehali.dev/c2549759-4ecf-4f2e-ad07-63ae790e3b2b?stats=true';
 
 interface GroupStats {
   id: number;
@@ -36,9 +36,10 @@ const StatsPage = () => {
     try {
       const response = await fetch(API_STATS);
       const data = await response.json();
-      setStats(data.stats);
+      setStats(data.stats || []);
     } catch (error) {
       console.error('Error fetching stats:', error);
+      setStats([]);
     } finally {
       setLoading(false);
     }

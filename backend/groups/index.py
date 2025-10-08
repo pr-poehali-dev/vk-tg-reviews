@@ -16,7 +16,7 @@ def get_db_connection():
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     method: str = event.get('httpMethod', 'GET')
-    path: str = event.get('path', '/')
+    params = event.get('queryStringParameters') or {}
     
     if method == 'OPTIONS':
         return {
@@ -35,7 +35,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     cur = conn.cursor()
     
     try:
-        if method == 'GET' and '/stats' in path:
+        if method == 'GET' and params.get('stats') == 'true':
             cur.execute("""
                 SELECT 
                     g.id,
@@ -88,7 +88,6 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         
         if method == 'GET':
-            params = event.get('queryStringParameters') or {}
             search = params.get('search', '')
             platform = params.get('platform', '')
             sort_by = params.get('sort', 'created_at')
