@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GroupCard from '@/components/GroupCard';
 import ReviewCard from '@/components/ReviewCard';
+import StatsPage from '@/pages/StatsPage';
 import Icon from '@/components/ui/icon';
 
 const API_GROUPS = 'https://functions.poehali.dev/c2549759-4ecf-4f2e-ad07-63ae790e3b2b';
@@ -43,12 +44,19 @@ const Index = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [newGroupDialogOpen, setNewGroupDialogOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [newGroupData, setNewGroupData] = useState({
     name: '',
     platform: '',
     members: '',
     description: '',
     link: ''
+  });
+  const [newReviewData, setNewReviewData] = useState({
+    user_name: '',
+    rating: 5,
+    text: ''
   });
 
   useEffect(() => {
@@ -115,6 +123,39 @@ const Index = () => {
     }
   };
 
+  const handleWriteReview = (groupId: number) => {
+    setSelectedGroupId(groupId);
+    setReviewDialogOpen(true);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!newReviewData.user_name || !newReviewData.text) {
+      alert('Заполните все поля');
+      return;
+    }
+
+    try {
+      const response = await fetch(API_REVIEWS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          group_id: selectedGroupId,
+          ...newReviewData
+        })
+      });
+      
+      if (response.ok) {
+        setReviewDialogOpen(false);
+        setNewReviewData({ user_name: '', rating: 5, text: '' });
+        setSelectedGroupId(null);
+        fetchReviews();
+        fetchGroups();
+      }
+    } catch (error) {
+      console.error('Error adding review:', error);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -171,6 +212,14 @@ const Index = () => {
             >
               <Icon name="MessageSquare" size={16} className="mr-2" />
               Все отзывы
+            </Button>
+            <Button
+              variant={activeTab === 'stats' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('stats')}
+              size="sm"
+            >
+              <Icon name="BarChart3" size={16} className="mr-2" />
+              Статистика
             </Button>
           </nav>
 
@@ -289,7 +338,7 @@ const Index = () => {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {groups.slice(0, 6).map((group) => (
-                    <GroupCard key={group.id} {...group} />
+                    <GroupCard key={group.id} {...group} onWriteReview={handleWriteReview} />
                   ))}
                 </div>
               )}
@@ -350,21 +399,21 @@ const Index = () => {
               <TabsContent value="all" className="mt-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   {groups.map((group) => (
-                    <GroupCard key={group.id} {...group} />
+                    <GroupCard key={group.id} {...group} onWriteReview={handleWriteReview} />
                   ))}
                 </div>
               </TabsContent>
               <TabsContent value="vk" className="mt-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   {groups.filter(g => g.platform === 'vk').map((group) => (
-                    <GroupCard key={group.id} {...group} />
+                    <GroupCard key={group.id} {...group} onWriteReview={handleWriteReview} />
                   ))}
                 </div>
               </TabsContent>
               <TabsContent value="telegram" className="mt-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   {groups.filter(g => g.platform === 'telegram').map((group) => (
-                    <GroupCard key={group.id} {...group} />
+                    <GroupCard key={group.id} {...group} onWriteReview={handleWriteReview} />
                   ))}
                 </div>
               </TabsContent>
@@ -383,7 +432,7 @@ const Index = () => {
                       {index + 1}
                     </div>
                   )}
-                  <GroupCard {...group} />
+                  <GroupCard {...group} onWriteReview={handleWriteReview} />
                 </div>
               ))}
             </div>
@@ -408,7 +457,65 @@ const Index = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'stats' && (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-foreground">Статистика групп</h2>
+            <StatsPage />
+          </div>
+        )}
       </main>
+
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Написать отзыв</DialogTitle>
+            <DialogDescription>
+              Поделитесь своим опытом о группе
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="reviewer-name">Ваше имя</Label>
+              <Input
+                id="reviewer-name"
+                value={newReviewData.user_name}
+                onChange={(e) => setNewReviewData({ ...newReviewData, user_name: e.target.value })}
+                placeholder="Введите ваше имя"
+              />
+            </div>
+            <div>
+              <Label htmlFor="rating">Оценка</Label>
+              <Select
+                value={String(newReviewData.rating)}
+                onValueChange={(value) => setNewReviewData({ ...newReviewData, rating: parseInt(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">⭐⭐⭐⭐⭐ (5)</SelectItem>
+                  <SelectItem value="4">⭐⭐⭐⭐ (4)</SelectItem>
+                  <SelectItem value="3">⭐⭐⭐ (3)</SelectItem>
+                  <SelectItem value="2">⭐⭐ (2)</SelectItem>
+                  <SelectItem value="1">⭐ (1)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="review-text">Отзыв</Label>
+              <Textarea
+                id="review-text"
+                value={newReviewData.text}
+                onChange={(e) => setNewReviewData({ ...newReviewData, text: e.target.value })}
+                placeholder="Напишите ваш отзыв..."
+                rows={4}
+              />
+            </div>
+            <Button className="w-full" onClick={handleSubmitReview}>Отправить отзыв</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <footer className="border-t mt-20">
         <div className="container max-w-7xl mx-auto px-4 py-8">

@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Icon from '@/components/ui/icon';
 
 interface GroupCardProps {
+  id: number;
   name: string;
   platform: 'vk' | 'telegram';
   members: string;
@@ -12,16 +13,19 @@ interface GroupCardProps {
   reviewsCount: number;
   description: string;
   avatar?: string;
+  onWriteReview?: (groupId: number) => void;
 }
 
 export default function GroupCard({
+  id,
   name,
   platform,
   members,
   rating,
   reviewsCount,
   description,
-  avatar
+  avatar,
+  onWriteReview
 }: GroupCardProps) {
   const renderStars = () => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -77,10 +81,18 @@ export default function GroupCard({
 
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{description}</p>
 
-          <Button variant="outline" size="sm" className="w-full sm:w-auto">
-            <Icon name="Eye" size={16} className="mr-2" />
-            Смотреть отзывы
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+              <Icon name="Eye" size={16} className="mr-2" />
+              Отзывы
+            </Button>
+            {onWriteReview && (
+              <Button size="sm" className="flex-1 sm:flex-none" onClick={() => onWriteReview(id)}>
+                <Icon name="MessageSquare" size={16} className="mr-2" />
+                Написать
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </Card>
