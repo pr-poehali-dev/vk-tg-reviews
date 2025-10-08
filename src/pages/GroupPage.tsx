@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ReviewCard from '@/components/ReviewCard';
 import Icon from '@/components/ui/icon';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const API_GROUPS = 'https://functions.poehali.dev/c2549759-4ecf-4f2e-ad07-63ae790e3b2b';
 const API_REVIEWS = 'https://functions.poehali.dev/3c8a0c55-f530-4c42-8527-f6e7e69ca7cf';
@@ -452,6 +453,72 @@ const GroupPage = () => {
                   </p>
                 )}
               </Card>
+            )}
+            
+            {analytics && analytics.platform === 'telegram' && analytics.subscribers_history && analytics.subscribers_history.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Icon name="TrendingUp" size={20} />
+                    Динамика роста подписчиков
+                  </h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={analytics.subscribers_history}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(value) => new Date(value).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+                      />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip 
+                        labelFormatter={(value) => new Date(value).toLocaleDateString('ru-RU')}
+                        formatter={(value: number) => [value.toLocaleString(), 'Подписчики']}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="subscribers" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        name="Подписчики"
+                        dot={{ r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Card>
+
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Icon name="Eye" size={20} />
+                    Динамика охвата постов
+                  </h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={analytics.views_history}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(value) => new Date(value).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+                      />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip 
+                        labelFormatter={(value) => new Date(value).toLocaleDateString('ru-RU')}
+                        formatter={(value: number) => [value.toLocaleString(), 'Средний охват']}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="views" 
+                        stroke="hsl(var(--chart-2))" 
+                        strokeWidth={2}
+                        name="Средний охват"
+                        dot={{ r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Card>
+              </div>
             )}
             
             <div>

@@ -412,6 +412,44 @@ def get_telegram_analytics(channel_id: str) -> Dict[str, Any]:
         if participants > 0 and avg_views > 0:
             err = (avg_views / participants) * 100
         
+        history_response = requests.get(
+            f'https://api.tgstat.ru/channels/subscribers',
+            params={
+                'token': tgstat_token,
+                'channelId': channel_id
+            },
+            timeout=10
+        )
+        
+        history_data = history_response.json()
+        subscribers_history = []
+        if history_data.get('status') == 'ok':
+            raw_history = history_data.get('response', [])
+            for item in raw_history[-30:]:
+                subscribers_history.append({
+                    'date': item.get('period'),
+                    'subscribers': item.get('participants_count', 0)
+                })
+        
+        views_response = requests.get(
+            f'https://api.tgstat.ru/channels/views',
+            params={
+                'token': tgstat_token,
+                'channelId': channel_id
+            },
+            timeout=10
+        )
+        
+        views_data = views_response.json()
+        views_history = []
+        if views_data.get('status') == 'ok':
+            raw_views = views_data.get('response', [])
+            for item in raw_views[-30:]:
+                views_history.append({
+                    'date': item.get('period'),
+                    'views': item.get('views_avg', 0)
+                })
+        
         return {
             'available': True,
             'platform': 'telegram',
@@ -424,7 +462,9 @@ def get_telegram_analytics(channel_id: str) -> Dict[str, Any]:
             'err_percent': round(err, 2),
             'daily_reach': stats.get('daily_reach', 0),
             'posts_count': channel_info.get('posts_count', 0),
-            'mentions_count': stats.get('mentions_count', 0)
+            'mentions_count': stats.get('mentions_count', 0),
+            'subscribers_history': subscribers_history,
+            'views_history': views_history
         }
         
     except Exception as e:
