@@ -343,43 +343,88 @@ def get_vk_analytics(group_id: str) -> Dict[str, Any]:
         }
 
 def get_telegram_analytics(channel_id: str) -> Dict[str, Any]:
-    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
+    tgstat_token = os.environ.get('TGSTAT_API_TOKEN')
     
-    if not bot_token:
+    if not tgstat_token:
         return {
             'available': False,
-            'message': 'Telegram Bot токен не настроен'
+            'message': 'TGStat API токен не настроен'
         }
     
     try:
-        if not channel_id.startswith('@'):
-            channel_id = f'@{channel_id}'
+        if channel_id.startswith('@'):
+            channel_id = channel_id[1:]
         
         response = requests.get(
-            f'https://api.telegram.org/bot{bot_token}/getChat',
-            params={'chat_id': channel_id},
+            f'https://api.tgstat.ru/channels/get',
+            params={
+                'token': tgstat_token,
+                'channelId': channel_id
+            },
             timeout=10
         )
         
         data = response.json()
         
-        if not data.get('ok'):
+        if data.get('status') != 'ok':
             return {
                 'available': False,
-                'message': f"Ошибка Telegram API: {data.get('description', 'Unknown')}"
+                'message': f"Ошибка TGStat API: {data.get('error', 'Unknown')}"
             }
         
-        chat_info = data['result']
+        channel_info = data.get('response', {})
+        
+        stats_response = requests.get(
+            f'https://api.tgstat.ru/channels/stat',
+            params={
+                'token': tgstat_token,
+                'channelId': channel_id
+            },
+            timeout=10
+        )
+        
+        stats_data = stats_response.json()
+        stats = stats_data.get('response', {}) if stats_data.get('status') == 'ok' else {}
+        
+        posts_response = requests.get(
+            f'https://api.tgstat.ru/channels/posts',
+            params={
+                'token': tgstat_token,
+                'channelId': channel_id,
+                'limit': 10
+            },
+            timeout=10
+        )
+        
+        posts_data = posts_response.json()
+        posts = posts_data.get('response', {}).get('items', []) if posts_data.get('status') == 'ok' else []
+        
+        avg_views = 0
+        avg_forwards = 0
+        if posts:
+            total_views = sum(post.get('views', 0) for post in posts)
+            total_forwards = sum(post.get('forwards', 0) for post in posts)
+            avg_views = total_views // len(posts)
+            avg_forwards = total_forwards // len(posts)
+        
+        participants = channel_info.get('participants_count', 0)
+        err = 0
+        if participants > 0 and avg_views > 0:
+            err = (avg_views / participants) * 100
         
         return {
             'available': True,
             'platform': 'telegram',
-            'subscribers': chat_info.get('member_count', 0),
-            'title': chat_info.get('title', ''),
-            'description': chat_info.get('description', ''),
-            'username': chat_info.get('username', ''),
-            'type': chat_info.get('type', ''),
-            'message': 'Полная статистика доступна только администраторам'
+            'subscribers': participants,
+            'title': channel_info.get('title', ''),
+            'username': channel_info.get('username', ''),
+            'category': channel_info.get('category', ''),
+            'avg_post_reach': avg_views,
+            'avg_forwards': avg_forwards,
+            'err_percent': round(err, 2),
+            'daily_reach': stats.get('daily_reach', 0),
+            'posts_count': channel_info.get('posts_count', 0),
+            'mentions_count': stats.get('mentions_count', 0)
         }
         
     except Exception as e:

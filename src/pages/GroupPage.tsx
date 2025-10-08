@@ -378,13 +378,61 @@ const GroupPage = () => {
                 )}
                 
                 {analytics.platform === 'telegram' && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="p-4 bg-muted rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
                         <Icon name="Users" size={20} className="text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">Подписчики</span>
                       </div>
                       <p className="text-2xl font-bold text-foreground">{analytics.subscribers?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Eye" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Ср. охват поста</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.avg_post_reach?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Share2" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Ср. репостов</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.avg_forwards?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="TrendingUp" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">ERR</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.err_percent}%</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="FileText" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Всего постов</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.posts_count?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Zap" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Дневной охват</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.daily_reach?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="MessageSquare" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Упоминаний</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.mentions_count?.toLocaleString()}</p>
                     </div>
                     
                     <div className="p-4 bg-muted rounded-lg">
