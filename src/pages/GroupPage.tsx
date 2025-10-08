@@ -46,12 +46,30 @@ interface RatingStats {
   1: number;
 }
 
+interface GroupAnalytics {
+  available: boolean;
+  message?: string;
+  platform?: string;
+  subscribers?: number;
+  posts_count?: number;
+  avg_likes?: number;
+  avg_comments?: number;
+  avg_reposts?: number;
+  avg_views?: number;
+  engagement_rate?: number;
+  total_reactions?: number;
+  title?: string;
+  username?: string;
+  type?: string;
+}
+
 const GroupPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [group, setGroup] = useState<Group | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [ratingStats, setRatingStats] = useState<RatingStats>({ 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 });
+  const [analytics, setAnalytics] = useState<GroupAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [newReviewData, setNewReviewData] = useState({
@@ -64,8 +82,19 @@ const GroupPage = () => {
     if (id) {
       fetchGroupData();
       fetchGroupReviews();
+      fetchAnalytics();
     }
   }, [id]);
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch(`${API_GROUPS}?analytics=${id}`);
+      const data = await response.json();
+      setAnalytics(data);
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    }
+  };
 
   const fetchGroupData = async () => {
     try {
@@ -272,10 +301,115 @@ const GroupPage = () => {
             </Card>
           </div>
 
-          <div className="lg:col-span-2">
-            <h2 className="text-2xl font-bold text-foreground mb-6">Отзывы пользователей</h2>
+          <div className="lg:col-span-2 space-y-8">
+            {analytics && analytics.available && (
+              <Card className="p-6">
+                <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
+                  <Icon name="BarChart3" size={24} />
+                  Статистика группы {group?.platform === 'vk' ? 'ВКонтакте' : 'Telegram'}
+                </h2>
+                
+                {analytics.platform === 'vk' && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Users" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Подписчики</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.subscribers?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="FileText" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Постов</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.posts_count?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Heart" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Ср. лайков</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.avg_likes?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Eye" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Ср. просмотров</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.avg_views?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="MessageCircle" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Ср. комментариев</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.avg_comments?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Share2" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Ср. репостов</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.avg_reposts?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="TrendingUp" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Вовлеченность</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.engagement_rate}%</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Activity" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Реакций всего</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.total_reactions?.toLocaleString()}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {analytics.platform === 'telegram' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Users" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Подписчики</span>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground">{analytics.subscribers?.toLocaleString()}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="AtSign" size={20} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Username</span>
+                      </div>
+                      <p className="text-lg font-bold text-foreground">@{analytics.username}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {analytics.message && (
+                  <p className="text-sm text-muted-foreground mt-4 p-3 bg-muted rounded-lg">
+                    <Icon name="Info" size={16} className="inline mr-2" />
+                    {analytics.message}
+                  </p>
+                )}
+              </Card>
+            )}
             
-            {reviews.length === 0 ? (
+            <div>
+              <h2 className="text-2xl font-bold text-foreground mb-6">Отзывы пользователей</h2>
+              
+              {reviews.length === 0 ? (
               <Card className="p-12 text-center">
                 <Icon name="MessageSquare" size={48} className="mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground mb-4">Пока нет отзывов на эту группу</p>
@@ -297,6 +431,7 @@ const GroupPage = () => {
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
       </main>

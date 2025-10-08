@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import GroupCard from '@/components/GroupCard';
 import ReviewCard from '@/components/ReviewCard';
-import StatsPage from '@/pages/StatsPage';
 import Icon from '@/components/ui/icon';
 
 const API_GROUPS = 'https://functions.poehali.dev/c2549759-4ecf-4f2e-ad07-63ae790e3b2b';
@@ -213,14 +212,7 @@ const Index = () => {
               <Icon name="MessageSquare" size={16} className="mr-2" />
               Все отзывы
             </Button>
-            <Button
-              variant={activeTab === 'stats' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('stats')}
-              size="sm"
-            >
-              <Icon name="BarChart3" size={16} className="mr-2" />
-              Статистика
-            </Button>
+
           </nav>
 
           <div className="flex items-center gap-2">
@@ -458,12 +450,7 @@ const Index = () => {
           </div>
         )}
 
-        {activeTab === 'stats' && (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-foreground">Статистика групп</h2>
-            <StatsPage />
-          </div>
-        )}
+
       </main>
 
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
