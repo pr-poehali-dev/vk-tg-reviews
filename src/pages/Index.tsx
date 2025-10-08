@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,66 +10,123 @@ import GroupCard from '@/components/GroupCard';
 import ReviewCard from '@/components/ReviewCard';
 import Icon from '@/components/ui/icon';
 
-const mockGroups = [
-  {
-    id: 1,
-    name: 'IT Специалисты',
-    platform: 'telegram' as const,
-    members: '81K',
-    rating: 4.8,
-    reviewsCount: 120,
-    description: 'Сообщество IT специалистов для обмена опытом и поиска работы',
-  },
-  {
-    id: 2,
-    name: 'Дизайн и творчество',
-    platform: 'vk' as const,
-    members: '300K',
-    rating: 4.5,
-    reviewsCount: 89,
-    description: 'Группа для дизайнеров, художников и всех творческих людей',
-  },
-  {
-    id: 3,
-    name: 'Маркетинг PRO',
-    platform: 'telegram' as const,
-    members: '45K',
-    rating: 4.9,
-    reviewsCount: 203,
-    description: 'Профессиональное сообщество маркетологов и SMM специалистов',
-  },
-];
+const API_GROUPS = 'https://functions.poehali.dev/c2549759-4ecf-4f2e-ad07-63ae790e3b2b';
+const API_REVIEWS = 'https://functions.poehali.dev/3c8a0c55-f530-4c42-8527-f6e7e69ca7cf';
 
-const mockReviews = [
-  {
-    id: 1,
-    userName: 'Анна Смирнова',
-    rating: 5,
-    date: '2 дня назад',
-    text: 'Отличное сообщество! Много полезной информации и активное общение. Рекомендую всем IT специалистам.',
-    groupName: 'IT Специалисты',
-  },
-  {
-    id: 2,
-    userName: 'Дмитрий Иванов',
-    rating: 4,
-    date: '5 дней назад',
-    text: 'Хорошая группа, но иногда много офтопа. В целом доволен контентом и участниками.',
-    groupName: 'Дизайн и творчество',
-  },
-  {
-    id: 3,
-    userName: 'Мария Петрова',
-    rating: 5,
-    date: 'неделю назад',
-    text: 'Лучший канал по маркетингу! Регулярно делятся кейсами и полезными материалами.',
-    groupName: 'Маркетинг PRO',
-  },
-];
+interface Group {
+  id: number;
+  name: string;
+  platform: 'vk' | 'telegram';
+  members: string;
+  rating: number;
+  reviews_count: number;
+  description: string;
+  link?: string;
+  avatar?: string;
+}
+
+interface Review {
+  id: number;
+  group_id: number;
+  user_name: string;
+  user_avatar?: string;
+  rating: number;
+  text: string;
+  created_at: string;
+  group_name: string;
+}
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newGroupDialogOpen, setNewGroupDialogOpen] = useState(false);
+  const [newGroupData, setNewGroupData] = useState({
+    name: '',
+    platform: '',
+    members: '',
+    description: '',
+    link: ''
+  });
+
+  useEffect(() => {
+    fetchGroups();
+    fetchReviews();
+  }, []);
+
+  const fetchGroups = async (search = '', platform = '', sort = 'created_at') => {
+    try {
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (platform) params.append('platform', platform);
+      if (sort) params.append('sort', sort);
+      
+      const response = await fetch(`${API_GROUPS}?${params}`);
+      const data = await response.json();
+      setGroups(data.map((g: any) => ({
+        ...g,
+        rating: parseFloat(g.rating) || 0,
+        reviewsCount: g.reviews_count
+      })));
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const response = await fetch(API_REVIEWS);
+      const data = await response.json();
+      setReviews(data.map((r: any) => ({
+        ...r,
+        userName: r.user_name,
+        groupName: r.group_name,
+        date: new Date(r.created_at).toLocaleDateString('ru-RU')
+      })));
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
+  const handleAddGroup = async () => {
+    if (!newGroupData.name || !newGroupData.platform) {
+      alert('Заполните название и платформу');
+      return;
+    }
+
+    try {
+      const response = await fetch(API_GROUPS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newGroupData)
+      });
+      
+      if (response.ok) {
+        setNewGroupDialogOpen(false);
+        setNewGroupData({ name: '', platform: '', members: '', description: '', link: '' });
+        fetchGroups();
+      }
+    } catch (error) {
+      console.error('Error adding group:', error);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'сегодня';
+    if (diffDays === 1) return 'вчера';
+    if (diffDays < 7) return `${diffDays} дня назад`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} недели назад`;
+    return date.toLocaleDateString('ru-RU');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,7 +175,7 @@ const Index = () => {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Dialog>
+            <Dialog open={newGroupDialogOpen} onOpenChange={setNewGroupDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Icon name="Plus" size={16} className="mr-2" />
@@ -135,11 +192,16 @@ const Index = () => {
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label htmlFor="name">Название группы</Label>
-                    <Input id="name" placeholder="IT Специалисты" />
+                    <Input 
+                      id="name" 
+                      placeholder="IT Специалисты" 
+                      value={newGroupData.name}
+                      onChange={(e) => setNewGroupData({...newGroupData, name: e.target.value})}
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="platform">Платформа</Label>
-                    <Select>
+                    <Select value={newGroupData.platform} onValueChange={(value) => setNewGroupData({...newGroupData, platform: value})}>
                       <SelectTrigger id="platform">
                         <SelectValue placeholder="Выберите платформу" />
                       </SelectTrigger>
@@ -150,14 +212,34 @@ const Index = () => {
                     </Select>
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="members">Количество подписчиков</Label>
+                    <Input 
+                      id="members" 
+                      placeholder="10K" 
+                      value={newGroupData.members}
+                      onChange={(e) => setNewGroupData({...newGroupData, members: e.target.value})}
+                    />
+                  </div>
+                  <div className="grid gap-2">
                     <Label htmlFor="link">Ссылка на группу</Label>
-                    <Input id="link" placeholder="https://t.me/example" />
+                    <Input 
+                      id="link" 
+                      placeholder="https://t.me/example" 
+                      value={newGroupData.link}
+                      onChange={(e) => setNewGroupData({...newGroupData, link: e.target.value})}
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="description">Описание</Label>
-                    <Textarea id="description" placeholder="Краткое описание группы" rows={3} />
+                    <Textarea 
+                      id="description" 
+                      placeholder="Краткое описание группы" 
+                      rows={3}
+                      value={newGroupData.description}
+                      onChange={(e) => setNewGroupData({...newGroupData, description: e.target.value})}
+                    />
                   </div>
-                  <Button className="w-full">Добавить</Button>
+                  <Button className="w-full" onClick={handleAddGroup}>Добавить</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -200,11 +282,17 @@ const Index = () => {
                   <Icon name="ArrowRight" size={16} className="ml-2" />
                 </Button>
               </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {mockGroups.map((group) => (
-                  <GroupCard key={group.id} {...group} />
-                ))}
-              </div>
+              {loading ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Загрузка...</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {groups.slice(0, 6).map((group) => (
+                    <GroupCard key={group.id} {...group} />
+                  ))}
+                </div>
+              )}
             </section>
 
             <section>
@@ -216,8 +304,16 @@ const Index = () => {
                 </Button>
               </div>
               <div className="grid gap-4">
-                {mockReviews.map((review) => (
-                  <ReviewCard key={review.id} {...review} />
+                {reviews.slice(0, 6).map((review) => (
+                  <ReviewCard 
+                    key={review.id} 
+                    userName={review.user_name}
+                    userAvatar={review.user_avatar}
+                    rating={review.rating}
+                    date={formatDate(review.created_at)}
+                    text={review.text}
+                    groupName={review.group_name}
+                  />
                 ))}
               </div>
             </section>
@@ -235,14 +331,17 @@ const Index = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1"
                 />
-                <Button>
+                <Button onClick={() => fetchGroups(searchQuery)}>
                   <Icon name="Search" size={18} className="mr-2" />
                   Найти
                 </Button>
               </div>
             </div>
             
-            <Tabs defaultValue="all" className="w-full">
+            <Tabs defaultValue="all" className="w-full" onValueChange={(value) => {
+              const platform = value === 'all' ? '' : value;
+              fetchGroups(searchQuery, platform);
+            }}>
               <TabsList>
                 <TabsTrigger value="all">Все</TabsTrigger>
                 <TabsTrigger value="vk">ВКонтакте</TabsTrigger>
@@ -250,21 +349,21 @@ const Index = () => {
               </TabsList>
               <TabsContent value="all" className="mt-6">
                 <div className="grid gap-4 md:grid-cols-2">
-                  {mockGroups.map((group) => (
+                  {groups.map((group) => (
                     <GroupCard key={group.id} {...group} />
                   ))}
                 </div>
               </TabsContent>
               <TabsContent value="vk" className="mt-6">
                 <div className="grid gap-4 md:grid-cols-2">
-                  {mockGroups.filter(g => g.platform === 'vk').map((group) => (
+                  {groups.filter(g => g.platform === 'vk').map((group) => (
                     <GroupCard key={group.id} {...group} />
                   ))}
                 </div>
               </TabsContent>
               <TabsContent value="telegram" className="mt-6">
                 <div className="grid gap-4 md:grid-cols-2">
-                  {mockGroups.filter(g => g.platform === 'telegram').map((group) => (
+                  {groups.filter(g => g.platform === 'telegram').map((group) => (
                     <GroupCard key={group.id} {...group} />
                   ))}
                 </div>
@@ -277,7 +376,7 @@ const Index = () => {
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-foreground">Топ групп по рейтингу</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[...mockGroups].sort((a, b) => b.rating - a.rating).map((group, index) => (
+              {[...groups].sort((a, b) => b.rating - a.rating).map((group, index) => (
                 <div key={group.id} className="relative">
                   {index < 3 && (
                     <div className="absolute -top-2 -left-2 z-10 w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-sm shadow-lg">
@@ -295,8 +394,16 @@ const Index = () => {
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-foreground">Все отзывы</h2>
             <div className="grid gap-4 max-w-3xl">
-              {mockReviews.map((review) => (
-                <ReviewCard key={review.id} {...review} />
+              {reviews.map((review) => (
+                <ReviewCard 
+                  key={review.id} 
+                  userName={review.user_name}
+                  userAvatar={review.user_avatar}
+                  rating={review.rating}
+                  date={formatDate(review.created_at)}
+                  text={review.text}
+                  groupName={review.group_name}
+                />
               ))}
             </div>
           </div>

@@ -1,0 +1,37 @@
+{
+  "tests": [
+    {
+      "name": "Get all groups",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "0": {
+          "id": "number",
+          "name": "string",
+          "platform": "string",
+          "rating": "number"
+        }
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new group",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Test Group",
+        "platform": "telegram",
+        "members": "1K",
+        "description": "Test description",
+        "link": "https://t.me/test"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "id": "number",
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
